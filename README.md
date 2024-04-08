@@ -14,6 +14,23 @@ Think of it as an open source alternative to Algolia and an easier-to-use, batte
 
 Read detailed step-by-step instructions on how to configure and setup the scraper on Typesense's dedicated documentation site: https://typesense.org/docs/latest/guide/docsearch.html
 
+## Changelog
+
+We use git tags to identify every release. 
+
+So to view the changelog for a release, you can compare tags using a GitHub link like this:
+
+[https://github.com/typesense/typesense-docsearch-scraper/compare/0.8.0...0.9.0](https://github.com/typesense/typesense-docsearch-scraper/compare/0.8.0...0.9.0).
+
+Remember to change the version numbers in the URL as needed. 
+
+## Compatibility
+
+| typesense-docsearch-scraper | typesense-server |
+| --- | --- |
+| 0.5.0 | >= 0.22.1 |
+| 0.4.x and below | >= 0.21.0  |
+
 ## Development Workflow
 
 This section only applies if you're making changes to this scraper itself. If you only need to run the scraper, see Usage instructions above.
@@ -129,18 +146,28 @@ pipenv install
 # Then, open a shell with with the Python environment:
 pipenv shell
 
-# Build a new version of the Docker container.
-export TAG="0.4.1"
-docker buildx build -f ./scraper/dev/docker/Dockerfile -t typesense/docsearch-scraper:${TAG} .
-docker push typesense/docsearch-scraper:${TAG}
-docker tag typesense/docsearch-scraper:${TAG} typesense/docsearch-scraper:latest
+# Build a new version of the base Docker container - ONLY NEEDED WHEN WE CHANGE DEPENDENCIES
+export SCRAPER_BASE_VERSION="0.7.0" # Only need to change this when we update dependencies
+docker buildx build -f ./scraper/dev/docker/Dockerfile.base -t typesense/docsearch-scraper-base:${SCRAPER_BASE_VERSION} .
+docker push typesense/docsearch-scraper-base:${SCRAPER_BASE_VERSION}
+docker tag typesense/docsearch-scraper-base:${SCRAPER_BASE_VERSION} typesense/docsearch-scraper-base:latest
+docker push typesense/docsearch-scraper-base:latest
+
+# Build a new version of the scraper Docker container
+export SCRAPER_VERSION="0.9.1"
+export SCRAPER_BASE_VERSION="latest"
+docker buildx build -f ./scraper/dev/docker/Dockerfile --build-arg SCRAPER_BASE_VERSION=${SCRAPER_BASE_VERSION} -t typesense/docsearch-scraper:${SCRAPER_VERSION} .
+docker push typesense/docsearch-scraper:${SCRAPER_VERSION}
+docker tag typesense/docsearch-scraper:${SCRAPER_VERSION} typesense/docsearch-scraper:latest
 docker push typesense/docsearch-scraper:latest
 
 # Add a new Git tag.
-git tag -a "$TAG" -m "$TAG"
+git tag -a "${SCRAPER_VERSION}" -m "${SCRAPER_VERSION}"
 
 # Sync with GitHub.
 git push --follow-tags
+
+
 ```
 
 ## Help

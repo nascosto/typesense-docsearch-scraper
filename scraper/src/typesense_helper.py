@@ -19,7 +19,8 @@ class TypesenseHelper:
                 'port': os.environ.get('TYPESENSE_PORT', None),
                 'path': os.environ.get('TYPESENSE_PATH', ''),
                 'protocol': os.environ.get('TYPESENSE_PROTOCOL', None)
-            }]
+            }],
+            'connection_timeout_seconds': 30 * 60
         })
         self.alias_name = alias_name
         self.collection_name_tmp = collection_name_tmp
@@ -39,6 +40,7 @@ class TypesenseHelper:
                 {'name': 'anchor', 'type': 'string', 'optional': True},
                 {'name': 'content', 'type': 'string', 'locale': self.collection_locale, 'optional': True},
                 {'name': 'url', 'type': 'string', 'facet': True},
+                {'name': 'url_without_anchor', 'type': 'string', 'facet': True, 'optional': True},
                 {'name': 'version', 'type': 'string[]', 'facet': True, 'optional': True},
                 {'name': 'hierarchy.lvl0', 'type': 'string', 'facet': True, 'locale': self.collection_locale, 'optional': True},
                 {'name': 'hierarchy.lvl1', 'type': 'string', 'facet': True, 'locale': self.collection_locale, 'optional': True},
@@ -65,6 +67,10 @@ class TypesenseHelper:
             symbols_to_index = self.custom_settings.get('symbols_to_index', None)
             if symbols_to_index is not None:
                 schema['symbols_to_index'] = symbols_to_index
+
+            field_definitions = self.custom_settings.get('field_definitions', None)
+            if field_definitions is not None:
+                schema['fields'] = field_definitions
 
         self.typesense_client.collections.create(schema)
 
@@ -108,7 +114,7 @@ class TypesenseHelper:
         transformed_record = {k: v for k, v in record.items() if v is not None}
         transformed_record['item_priority'] = transformed_record['weight']['page_rank'] * 1000000000 + \
                                               transformed_record['weight']['level'] * 1000 + \
-                                              transformed_record['weight']['position']
+                                              transformed_record['weight']['position_descending']
 
         # Flatten nested hierarchy field
         for x in range(0, 7):
